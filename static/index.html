@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyMate AI — Personal AI Study Coach</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- TOP NAVIGATION BAR -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div class="brand-text">
+          <h1>StudyMate <span>AI</span></h1>
+          <p class="tagline">Personal RAG Study Coach</p>
+        </div>
+      </div>
+
+      <!-- MAIN TABS -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="chat">
+          <i class="fa-solid fa-comments"></i>
+          <span>Study Chat</span>
+        </button>
+        <button class="nav-tab" data-tab="quiz">
+          <i class="fa-solid fa-brain"></i>
+          <span>Quiz Generator</span>
+        </button>
+        <button class="nav-tab" data-tab="notes">
+          <i class="fa-solid fa-folder-open"></i>
+          <span>Notes Library</span>
+        </button>
+      </nav>
+
+      <!-- SYSTEM STATUS -->
+      <div class="status-widget">
+        <div class="status-indicator" id="statusIndicator">
+          <span class="dot"></span>
+          <span class="status-label" id="statusLabel">Connecting...</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT LAYOUT -->
+    <div class="main-layout">
+
+      <!-- SIDEBAR: NOTES & UPLOAD -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2><i class="fa-solid fa-book-bookmark"></i> Study Notes</h2>
+          <span class="badge" id="notesCountBadge">0 files</span>
+        </div>
+
+        <!-- FILE UPLOAD DROPZONE -->
+        <div class="upload-box" id="dropZone">
+          <input type="file" id="fileInput" multiple accept=".pdf" class="file-input">
+          <div class="upload-content">
+            <div class="upload-icon">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <p class="upload-title">Drop PDF Notes Here</p>
+            <p class="upload-subtitle">or <span class="browse-btn">browse files</span></p>
+          </div>
+          <div class="upload-progress hidden" id="uploadProgress">
+            <i class="fa-solid fa-circle-notch fa-spin"></i> Processing PDF...
+          </div>
+        </div>
+
+        <!-- NOTES LIST -->
+        <div class="notes-list-container">
+          <div class="notes-list" id="notesList">
+            <div class="skeleton-item"></div>
+            <div class="skeleton-item"></div>
+          </div>
+        </div>
+
+        <!-- STATS FOOTER -->
+        <div class="sidebar-footer">
+          <div class="stat-card">
+            <i class="fa-solid fa-file-pdf"></i>
+            <div>
+              <span class="stat-val" id="totalDocsVal">0</span>
+              <span class="stat-lbl">Documents</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fa-solid fa-font"></i>
+            <div>
+              <span class="stat-val" id="totalCharsVal">0</span>
+              <span class="stat-lbl">Characters</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- TAB CONTENTS AREA -->
+      <main class="content-area">
+
+        <!-- TAB 1: CHAT VIEW -->
+        <section class="tab-content active" id="tab-chat">
+          <div class="chat-wrapper">
+            
+            <!-- CHAT MESSAGES -->
+            <div class="chat-messages" id="chatMessages">
+              <!-- WELCOME HERO CARD -->
+              <div class="welcome-card" id="welcomeCard">
+                <div class="welcome-icon">
+                  <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h2>Hello! I'm StudyMate AI</h2>
+                <p>I analyze your uploaded PDF study notes to answer your questions, explain complex concepts, and generate custom study materials.</p>
+                
+                <div class="suggestions-label">Try asking:</div>
+                <div class="suggestions-grid">
+                  <button class="chip-btn" data-query="Summarize key topics in my study notes">
+                    <i class="fa-solid fa-list-check"></i> Summarize key topics in my notes
+                  </button>
+                  <button class="chip-btn" data-query="Explain Cryptography fundamentals simply">
+                    <i class="fa-solid fa-key"></i> Explain Cryptography fundamentals
+                  </button>
+                  <button class="chip-btn" data-query="What is Cloud Computing and its services?">
+                    <i class="fa-solid fa-cloud"></i> What is Cloud Computing?
+                  </button>
+                  <button class="chip-btn" data-query="Give me key definitions to remember for exam">
+                    <i class="fa-solid fa-lightbulb"></i> Key definitions to remember
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- CHAT INPUT BAR -->
+            <div class="chat-input-container">
+              <form id="chatForm" class="chat-form">
+                <textarea id="chatInput" placeholder="Ask a question about your study notes..." rows="1"></textarea>
+                <button type="submit" id="sendBtn" class="send-btn" title="Send Message">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </form>
+              <p class="input-hint"><i class="fa-solid fa-shield-halved"></i> Powered by local Ollama Llama 3.2. Answers strictly grounded in your study material.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: QUIZ GENERATOR VIEW -->
+        <section class="tab-content" id="tab-quiz">
+          <div class="quiz-container">
+            
+            <!-- QUIZ GENERATOR HEADER CARD -->
+            <div class="quiz-header-card">
+              <div class="quiz-header-text">
+                <h2><i class="fa-solid fa-circle-question"></i> AI Quiz Generator</h2>
+                <p>Generate targeted practice quizzes from your study material and test your understanding with instant AI evaluation.</p>
+              </div>
+
+              <form id="quizGenForm" class="quiz-gen-form">
+                <div class="quiz-input-group">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="quizTopicInput" placeholder="Enter topic (e.g. Encryption, Cloud Storage, Security)..." required>
+                  <button type="submit" id="generateQuizBtn" class="btn-primary">
+                    <i class="fa-solid fa-bolt"></i> Generate 5-Question Quiz
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- QUIZ RESULTS DISPLAY -->
+            <div class="quiz-layout">
+              
+              <!-- LEFT: GENERATED QUIZ -->
+              <div class="quiz-card-panel">
+                <div class="panel-header">
+                  <h3><i class="fa-solid fa-clipboard-list"></i> Generated Quiz</h3>
+                  <span id="quizTopicTag" class="topic-tag hidden">Topic: <strong id="currentTopicText"></strong></span>
+                </div>
+                <div id="quizContent" class="quiz-content-body">
+                  <div class="empty-quiz-placeholder">
+                    <i class="fa-solid fa-pencil"></i>
+                    <p>Enter a topic above and click <strong>Generate 5-Question Quiz</strong> to generate custom practice questions from your notes.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RIGHT: ANSWER EVALUATOR -->
+              <div class="evaluator-panel">
+                <div class="panel-header">
+                  <h3><i class="fa-solid fa-check-double"></i> Answer Evaluator</h3>
+                </div>
+                <form id="evaluateForm" class="evaluate-form">
+                  <div class="form-group">
+                    <label for="evalQuestion">Quiz Question</label>
+                    <textarea id="evalQuestion" placeholder="Paste or type the quiz question here..." rows="2" required></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="evalAnswer">Your Answer</label>
+                    <textarea id="evalAnswer" placeholder="Type your answer here..." rows="3" required></textarea>
+                  </div>
+                  <button type="submit" id="evalBtn" class="btn-secondary">
+                    <i class="fa-solid fa-user-check"></i> Evaluate My Answer
+                  </button>
+                </form>
+
+                <div id="evalResult" class="eval-result-card hidden">
+                  <h4><i class="fa-solid fa-square-poll-vertical"></i> AI Feedback:</h4>
+                  <div id="evalText" class="eval-text-content"></div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+        <!-- TAB 3: NOTES LIBRARY VIEW -->
+        <section class="tab-content" id="tab-notes">
+          <div class="library-container">
+            <div class="library-header">
+              <div>
+                <h2><i class="fa-solid fa-books"></i> Uploaded Notes Library</h2>
+                <p>Manage your uploaded PDF files and monitor extracted text metrics.</p>
+              </div>
+              <button class="btn-primary" id="libraryUploadBtn">
+                <i class="fa-solid fa-file-circle-plus"></i> Upload PDF Note
+              </button>
+            </div>
+
+            <div id="libraryGrid" class="library-grid">
+              <!-- Dynamically populated document cards -->
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
