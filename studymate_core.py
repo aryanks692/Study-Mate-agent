@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 from pypdf import PdfReader
 import ollama
@@ -119,7 +120,7 @@ QUESTION:
     return response["message"]["content"]
 
 def generate_quiz(topic, results, model="llama3.2"):
-    """Generate a short 5-question quiz on a given topic using notes context."""
+    """Generate a text-based 5-question quiz."""
     context = ""
     for score, filename, sentence in results:
         context += f"Source: {filename}\n{sentence}\n\n"
@@ -135,12 +136,7 @@ Study material:
 {context if context else 'No relevant notes found.'}
 
 Create exactly 5 questions.
-
-Mix:
-- conceptual questions
-- definition questions
-- application questions
-
+Mix conceptual, definition, and application questions.
 Do not ask about information that is not contained in the study material.
 Do not provide the answers yet.
 """
@@ -150,6 +146,95 @@ Do not provide the answers yet.
         messages=[{"role": "user", "content": prompt}]
     )
     return response["message"]["content"]
+
+def generate_mcq_quiz(topic, results, model="llama3.2"):
+    """Generate a structured MCQ quiz (4 questions with 4 options each) in JSON format."""
+    context = ""
+    for score, filename, sentence in results:
+        context += f"Source: {filename}\n{sentence}\n\n"
+
+    prompt = f"""You are StudyMate, a personal AI study coach.
+
+Create an interactive 4-question Multiple Choice (MCQ) quiz based ONLY on the provided study material.
+
+Topic:
+{topic}
+
+Study material:
+{context if context else 'No relevant notes found.'}
+
+Rules:
+1. Create exactly 4 multiple choice questions.
+2. For each question, provide 4 options starting with A), B), C), and D).
+3. Specify exactly one correct option letter in "answer" (must be "A", "B", "C", or "D").
+4. Provide a brief explanation of why that answer is correct based on the study material.
+5. Output ONLY raw JSON array. Start with [ and end with ].
+
+JSON Format required:
+[
+  {{
+    "id": 1,
+    "question": "Question text here?",
+    "options": [
+      "A) Option 1",
+      "B) Option 2",
+      "C) Option 3",
+      "D) Option 4"
+    ],
+    "answer": "A",
+    "explanation": "Explanation based on notes."
+  }}
+]
+"""
+
+    response = ollama.chat(
+        model=model,
+        messages=[{"role": "user", "content": prompt}]
+    )
+    raw_content = response["message"]["content"].strip()
+    
+    cleaned = raw_content
+    if cleaned.startswith("```"):
+        lines = cleaned.split("\n")
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        cleaned = "\n".join(lines).strip()
+
+    # 1. Direct JSON parse
+    try:
+        data = json.loads(cleaned)
+        if isinstance(data, list):
+            return data
+    except Exception:
+        pass
+
+    # 2. Fix missing closing brackets
+    for suffix in ["]", "}]", "\n}]", "\n]"]:
+        try:
+            data = json.loads(cleaned + suffix)
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+
+    # 3. Regex extract question objects
+    import re
+    pattern = r'\{\s*"id":\s*\d+,\s*"question":.*?"explanation":\s*".*?"\s*\}'
+    matches = re.findall(pattern, cleaned, re.DOTALL)
+    parsed = []
+    for match in matches:
+        try:
+            obj = json.loads(match)
+            parsed.append(obj)
+        except Exception:
+            pass
+
+    if parsed:
+        return parsed
+
+    return raw_content
 
 def evaluate_answer(question, answer, results, model="llama3.2"):
     """Evaluate a student's answer against study material."""

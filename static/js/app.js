@@ -458,16 +458,29 @@ document.addEventListener('DOMContentLoaded', () => {
     if (elem) elem.remove();
   }
 
-  // --- QUIZ GENERATOR & EVALUATOR ---
+  // --- MCQ QUIZ GENERATOR & INTERACTIVE HUB ---
   function setupQuiz() {
+    const mcqTopBar = document.getElementById('mcqTopBar');
+    const mcqContainer = document.getElementById('mcqContainer');
+    const currentTopicText = document.getElementById('currentTopicText');
+    const scoreVal = document.getElementById('scoreVal');
+    const totalQuestionsVal = document.getElementById('totalQuestionsVal');
+
+    let quizState = {
+      questions: [],
+      score: 0,
+      answeredCount: 0
+    };
+
     quizGenForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const topic = quizTopicInput.value.trim();
       if (!topic) return;
 
       generateQuizBtn.disabled = true;
-      generateQuizBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Generating...`;
-      quizContent.innerHTML = `<div class="empty-quiz-placeholder"><i class="fa-solid fa-spinner fa-spin"></i><p>Analyzing notes and generating quiz on "${topic}"...</p></div>`;
+      generateQuizBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Generating MCQs...`;
+      mcqContainer.innerHTML = `<div class="empty-quiz-placeholder"><i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: var(--primary);"></i><p>Reading study notes & generating interactive MCQ questions on "${topic}"...</p></div>`;
+      mcqTopBar.classList.add('hidden');
 
       try {
         const res = await fetch('/api/quiz/generate', {
@@ -477,51 +490,120 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const data = await res.json();
 
-        if (res.ok) {
-          quizTopicTag.classList.remove('hidden');
+        if (res.ok && data.questions && data.questions.length > 0) {
+          quizState.questions = data.questions;
+          quizState.score = 0;
+          quizState.answeredCount = 0;
+
+          mcqTopBar.classList.remove('hidden');
           currentTopicText.textContent = data.topic;
-          quizContent.innerText = data.quiz;
+          scoreVal.textContent = '0';
+          totalQuestionsVal.textContent = quizState.questions.length;
+
+          renderMCQQuestions(quizState.questions);
+        } else if (data.raw_text) {
+          mcqContainer.innerHTML = `<div class="mcq-card"><div class="mcq-explanation-card">${data.raw_text}</div></div>`;
         } else {
-          quizContent.innerHTML = `<div class="empty-quiz-placeholder" style="color:var(--accent-red);"><i class="fa-solid fa-triangle-exclamation"></i><p>${data.detail || 'Failed to generate quiz.'}</p></div>`;
+          mcqContainer.innerHTML = `<div class="empty-quiz-placeholder" style="color:var(--accent-red);"><i class="fa-solid fa-triangle-exclamation"></i><p>${data.message || data.detail || 'Failed to generate MCQ quiz.'}</p></div>`;
         }
       } catch (e) {
-        quizContent.innerHTML = `<div class="empty-quiz-placeholder" style="color:var(--accent-red);"><i class="fa-solid fa-plug-circle-xmark"></i><p>Error connecting to backend server.</p></div>`;
+        mcqContainer.innerHTML = `<div class="empty-quiz-placeholder" style="color:var(--accent-red);"><i class="fa-solid fa-plug-circle-xmark"></i><p>Error connecting to backend server.</p></div>`;
       } finally {
         generateQuizBtn.disabled = false;
-        generateQuizBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> Generate 5-Question Quiz`;
+        generateQuizBtn.innerHTML = `<i class="fa-solid fa-bolt"></i> Generate MCQ Quiz`;
       }
     });
 
-    evaluateForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const question = evalQuestion.value.trim();
-      const answer = evalAnswer.value.trim();
-      if (!question || !answer) return;
+    function renderMCQQuestions(questions) {
+      mcqContainer.innerHTML = '';
 
-      evalBtn.disabled = true;
-      evalBtn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Evaluating...`;
+      questions.forEach((q, qIndex) => {
+        const card = document.createElement('div');
+        card.className = 'mcq-card';
+        card.id = `mcq-card-${qIndex}`;
 
-      try {
-        const res = await fetch('/api/quiz/evaluate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, answer })
+        const optionsHtml = q.options.map((opt, optIndex) => {
+          // Extract option letter (A, B, C, D)
+          let optLetter = 'A';
+          if (opt.startsWith('A') || opt.startsWith('a')) optLetter = 'A';
+          else if (opt.startsWith('B') || opt.startsWith('b')) optLetter = 'B';
+          else if (opt.startsWith('C') || opt.startsWith('c')) optLetter = 'C';
+          else if (opt.startsWith('D') || opt.startsWith('d')) optLetter = 'D';
+          else optLetter = String.fromCharCode(65 + optIndex);
+
+          return `
+            <button class="mcq-option-btn" data-qindex="${qIndex}" data-letter="${optLetter}" data-optindex="${optIndex}">
+              <span>${opt}</span>
+              <span class="option-status-icon"></span>
+            </button>
+          `;
+        }).join('');
+
+        card.innerHTML = `
+          <div class="mcq-question-title">
+            <span class="mcq-q-num">Q${qIndex + 1}</span>
+            <span>${q.question}</span>
+          </div>
+          <div class="mcq-options-grid">
+            ${optionsHtml}
+          </div>
+          <div class="mcq-explanation-card hidden" id="mcq-exp-${qIndex}">
+            <strong><i class="fa-solid fa-lightbulb"></i> Explanation:</strong> ${q.explanation || 'Based on study notes.'}
+          </div>
+        `;
+
+        mcqContainer.appendChild(card);
+      });
+
+      // Add click listeners to option buttons
+      mcqContainer.querySelectorAll('.mcq-option-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const qIndex = parseInt(btn.getAttribute('data-qindex'));
+          const selectedLetter = btn.getAttribute('data-letter');
+          handleAnswerSelection(qIndex, selectedLetter);
         });
-        const data = await res.json();
+      });
+    }
 
-        if (res.ok) {
-          evalResult.classList.remove('hidden');
-          evalText.innerText = data.evaluation;
-        } else {
-          alert(data.detail || 'Evaluation failed.');
-        }
-      } catch (e) {
-        alert('Failed to evaluate answer.');
-      } finally {
-        evalBtn.disabled = false;
-        evalBtn.innerHTML = `<i class="fa-solid fa-user-check"></i> Evaluate My Answer`;
+    function handleAnswerSelection(qIndex, selectedLetter) {
+      const q = quizState.questions[qIndex];
+      const card = document.getElementById(`mcq-card-${qIndex}`);
+      const optionBtns = card.querySelectorAll('.mcq-option-btn');
+      const expCard = document.getElementById(`mcq-exp-${qIndex}`);
+
+      // Disable further clicks on this card
+      optionBtns.forEach(btn => btn.classList.add('disabled'));
+
+      // Determine correct answer letter
+      const correctAnswerLetter = (q.answer || 'A').trim().toUpperCase().charAt(0);
+      const isCorrect = selectedLetter.toUpperCase() === correctAnswerLetter;
+
+      if (isCorrect) {
+        quizState.score++;
+        scoreVal.textContent = quizState.score;
       }
-    });
+
+      quizState.answeredCount++;
+
+      // Highlight options
+      optionBtns.forEach(btn => {
+        const btnLetter = btn.getAttribute('data-letter').toUpperCase();
+        const iconSpan = btn.querySelector('.option-status-icon');
+
+        if (btnLetter === correctAnswerLetter) {
+          btn.classList.add('correct');
+          iconSpan.innerHTML = `<i class="fa-solid fa-circle-check"></i>`;
+        } else if (btnLetter === selectedLetter.toUpperCase() && !isCorrect) {
+          btn.classList.add('wrong');
+          iconSpan.innerHTML = `<i class="fa-solid fa-circle-xmark"></i>`;
+        }
+      });
+
+      // Show explanation card
+      if (expCard) {
+        expCard.classList.remove('hidden');
+      }
+    }
   }
 
 });

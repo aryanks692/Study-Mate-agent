@@ -14,6 +14,7 @@ from studymate_core import (
     search_notes,
     ask_ai,
     generate_quiz,
+    generate_mcq_quiz,
     evaluate_answer,
     NOTES_FOLDER
 )
@@ -152,19 +153,30 @@ def quiz_generate(req: QuizGenerateRequest):
     results = search_notes(req.topic, notes_cache)
     if not results:
         return {
-            "quiz": "I couldn't find enough information in your notes regarding this topic to create a quiz.",
+            "questions": [],
+            "message": "I couldn't find enough information in your notes regarding this topic to create an MCQ quiz.",
             "sources": []
         }
 
     try:
-        quiz_text = generate_quiz(req.topic, results)
+        mcq_data = generate_mcq_quiz(req.topic, results)
         formatted_sources = [
             {"score": score, "filename": filename, "snippet": snippet}
             for score, filename, snippet in results
         ]
+        
+        # If mcq_data returned as a string fallback, wrap it nicely
+        if isinstance(mcq_data, str):
+            return {
+                "topic": req.topic,
+                "raw_text": mcq_data,
+                "questions": [],
+                "sources": formatted_sources
+            }
+            
         return {
             "topic": req.topic,
-            "quiz": quiz_text,
+            "questions": mcq_data,
             "sources": formatted_sources
         }
     except Exception as e:
