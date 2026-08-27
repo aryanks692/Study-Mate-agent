@@ -123,6 +123,6 @@ Then open **http://localhost:8000** in your browser.
 
 ## Demo Video
 
-[Unlisted YouTube link — add after upload]
+ https://youtu.be/h3uJogzcU2g
 
 The video shows a live end-to-end run: uploading a PDF, asking questions in Study Chat with retrieved-snippet citations, uploading a second note and generating a topic-scoped quiz, and reviewing the Notes Library — with narration covering one design decision and one limitation/guardrail.
