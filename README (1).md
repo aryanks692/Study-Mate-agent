@@ -163,3 +163,40 @@ python agent.py
  https://youtu.be/h3uJogzcU2g
 
 The video shows a live end-to-end run: uploading a PDF, asking questions in Study Chat with retrieved-snippet citations, uploading a second note and generating a topic-scoped quiz, and reviewing the Notes Library — with narration covering one design decision and one limitation/guardrail.
+## Retrospective
+### What I Set Out to Do
+
+When I started the project, my goal was to build StudyVerse AI as a personal AI study assistant that could help students learn from their own study materials rather than relying only on generic answers from an AI model. I wanted the system to make studying more interactive by allowing a student to use their notes as the primary source of information and receive explanations, summaries, questions, and other study support from those materials.
+
+My initial idea was fairly simple: give the AI my study notes and make it behave like a personal study coach. As I worked on the project, however, I realized that building a useful study assistant involves much more than connecting a language model to a prompt. The quality of the notes, the way information is retrieved, the instructions given to the model, and the way the user interacts with the system all affect the final result.
+
+### What Changed During the Project
+
+One of the biggest changes in my thinking was that I stopped viewing the AI model as the entire application. The model is only one component of the system. The actual value comes from designing a workflow around it.
+
+I experimented with different approaches while building StudyVerse AI and learned that the AI needs clear context and instructions to produce useful study responses. I also worked with my own academic material, including subjects such as cryptography, which made it easier to evaluate whether the system was actually helping me understand the content.
+
+Another important change was learning to think about reliability. A language model can produce an answer that sounds convincing even when the answer is not supported by the study material. Because of this, I became more conscious of the difference between an answer that is fluent and an answer that is trustworthy. This changed how I think about AI applications: the goal should not simply be to make the model generate impressive responses, but to design the system so that its responses are useful, relevant, and grounded in the available information.
+
+I also learned that building an AI project involves practical engineering decisions. During development, I faced issues with model/API access and had to reconsider the technology choices instead of assuming that the original approach would always work. This pushed me toward a more practical mindset: when one component creates a limitation, the project should be redesigned around the available resources rather than abandoned.
+
+## What I Would Build Next
+
+If I continued developing StudyVerse AI, I would focus on making it a more complete study platform. I would improve document retrieval so that answers are more consistently grounded in the student's notes. I would also add features such as automatic quizzes, flashcards, spaced-repetition reminders, topic-wise progress tracking, and difficulty adaptation based on the student's performance.
+
+Another improvement would be better evaluation. Instead of only checking whether an answer looks correct, I would create a set of questions with expected answers and measure how accurately the system retrieves and explains information from the source material. I would also test the system across different subjects and document formats.
+
+Finally, I would improve the user interface and deployment so that StudyVerse AI could be used by other students rather than only as a personal prototype.
+
+### Three Transferable Things I Learned
+
+**1. AI application quality depends on the whole system, not just the model.**
+Choosing a language model is only one part of building an AI product. Prompting, context, retrieval, interface design, and evaluation are equally important.
+
+**2. Building requires adapting when the original plan does not work.**
+Technical limitations such as API availability, model access, or environment problems are part of real development. I learned to troubleshoot, change tools when necessary, and keep the main objective in focus.
+
+**3. Evaluation and reliability matter more than impressive outputs.**
+An AI response can sound intelligent without being correct or grounded in the source material. I learned to question the output, verify important information, and think about how the system should be evaluated before considering it successful.
+
+Looking back from the end of the project, StudyVerse AI changed how I think about building with AI. I started with the idea of creating an AI-powered study assistant, but I finished with a better understanding that useful AI products require problem definition, engineering, experimentation, evaluation, and responsible use of AI. The next version of StudyVerse AI would therefore focus not just on adding more features, but on making the system more reliable, measurable, and genuinely useful to students.
